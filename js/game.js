@@ -33,7 +33,16 @@ function isPosedQuestion(question = state.currentQ) {
   return question?.render === 'posed';
 }
 
+function isPosedMulQuestion(question = state.currentQ) {
+  return isPosedQuestion(question) && question?.op === OP.MUL;
+}
+
 function getPosedWidth(question) {
+  if (isPosedMulQuestion(question)) {
+    const topLen = String(question?.top ?? '').length;
+    const answerLen = String(question?.answer ?? '').length;
+    return Math.max(answerLen, topLen + 2, 4);
+  }
   return Math.max(
     String(question?.top ?? '').length,
     String(question?.bottom ?? '').length,
@@ -46,6 +55,52 @@ function getPaddedDigits(value, width) {
   const chars = String(value ?? '').split('');
   const pad = Math.max(0, width - chars.length);
   return Array.from({ length: pad }, () => '').concat(chars);
+}
+
+function getMulPhaseForLane(lane) {
+  if (lane === 'pp2' || lane === 'rm2') return 'pp2';
+  if (lane === 'final' || lane === 'rs') return 'sum';
+  return 'pp1';
+}
+
+function getMulResultLaneForPhase(phase) {
+  if (phase === 'sum') return 'final';
+  if (phase === 'pp2') return 'pp2';
+  return 'pp1';
+}
+
+function getMulCarryLaneForPhase(phase) {
+  if (phase === 'sum') return 'rs';
+  if (phase === 'pp2') return 'rm2';
+  return 'rm1';
+}
+
+function isCarryLane(lane) {
+  return lane === 'carry' || lane === 'rm1' || lane === 'rm2' || lane === 'rs';
+}
+
+function isResultLane(lane) {
+  return lane === 'result' || lane === 'pp1' || lane === 'pp2' || lane === 'final';
+}
+
+function resolveColumnForLane(lane, requestedCol) {
+  if (!posedInputState) return null;
+  const width = posedInputState.width;
+  let col = Math.max(0, Math.min(width - 1, requestedCol));
+
+  if (isCarryLane(lane) && col === 0) col = 1;
+
+  if (col >= width) return null;
+  if (isCarryLane(lane) && width <= 1) return null;
+  return col;
+}
+
+function setMulPhase(phase) {
+  if (!posedInputState || posedInputState.kind !== 'mul') return;
+  const order = { pp1: 1, pp2: 2, sum: 3 };
+  const current = order[posedInputState.mulPhase] || 1;
+  const next = order[phase] || 1;
+  if (next > current) posedInputState.mulPhase = phase;
 }
 
 function resetPosedInputState() {
@@ -62,18 +117,22 @@ function resetPosedInputState() {
 
 function syncPosedBuffer() {
   if (!posedInputState) return;
-  const raw = posedInputState.resultDigits.slice().reverse().join('').replace(/^0+(?=\d)/, '');
+  const resultLane = posedInputState.kind === 'mul' ? 'final' : 'result';
+  const digits = posedInputState.lanes[resultLane] || [];
+  const raw = digits.slice().reverse().join('').replace(/^0+(?=\d)/, '');
   state.inputBuffer = raw;
   state.elements.input.value = raw;
 }
 
 function syncPosedActionSelection() {
   if (!state.elements.posedActions || !posedInputState) return;
+  const carryActive = isCarryLane(posedInputState.activeLane);
+  const resultActive = isResultLane(posedInputState.activeLane);
   state.elements.posedActions.querySelectorAll('.posed-action-btn').forEach((btn) => {
     if (btn.dataset.action === 'posed-mode-result') {
-      btn.classList.toggle('is-active', posedInputState.activeLane === 'result');
+      btn.classList.toggle('is-active', resultActive);
     } else if (btn.dataset.action === 'posed-mode-carry') {
-      btn.classList.toggle('is-active', posedInputState.activeLane === 'carry');
+      btn.classList.toggle('is-active', carryActive);
     } else {
       btn.classList.remove('is-active');
     }
@@ -82,8 +141,12 @@ function syncPosedActionSelection() {
 
 function setPosedActiveCell(lane, col) {
   if (!posedInputState) return;
-  posedInputState.activeLane = lane === 'carry' ? 'carry' : 'result';
-  posedInputState.activeCol = Math.max(0, Math.min(posedInputState.width - 1, col));
+  if (!posedInputState.lanes[lane]) return;
+  if (posedInputState.kind === 'mul') setMulPhase(getMulPhaseForLane(lane));
+  const safeCol = resolveColumnForLane(lane, col);
+  if (safeCol === null) return;
+  posedInputState.activeLane = lane;
+  posedInputState.activeCol = safeCol;
   renderPosedBoard(state.currentQ);
 }
 
@@ -93,51 +156,127 @@ function renderPosedBoard(question) {
   const cols = `repeat(${width}, minmax(0, 1fr))`;
   const topDigits = getPaddedDigits(question.top, width);
   const bottomDigits = getPaddedDigits(question.bottom, width);
-  const carryDigits = posedInputState.carryDigits.slice().reverse();
-  const resultDigits = posedInputState.resultDigits.slice().reverse();
+  const lanes = posedInputState.lanes;
 
-  const cellsHtml = (digits, { lane = null } = {}) => digits.map((digit, idx) => {
+  const cellsHtml = (digits, { lane = null, readonlyCols = [] } = {}) => digits.map((digit, idx) => {
     if (!lane) return `<span class="posed-cell">${digit || '&nbsp;'}</span>`;
     const col = width - 1 - idx;
+    const readOnly = readonlyCols.includes(col);
     const active = col === posedInputState.activeCol && lane === posedInputState.activeLane ? ' active' : '';
     const empty = digit === '' ? ' empty' : '';
-    const value = digit === '' ? '·' : digit;
+    const value = digit === '' ? (readOnly ? '&nbsp;' : '·') : digit;
+    if (readOnly) return `<span class="posed-cell posed-cell--readonly${empty}">${value}</span>`;
     return `<span class="posed-cell${active}${empty}" data-posed-cell="1" data-lane="${lane}" data-col="${col}" role="button" tabindex="0">${value}</span>`;
   }).join('');
 
+  const laneDigits = (lane) => (lanes[lane] || []).slice().reverse();
+
   state.elements.question.classList.add('question-text--posed');
-  state.elements.question.innerHTML = `
-    <div class="posed-board">
-      <div class="posed-row posed-row--carry">
-        <span class="posed-sign posed-sign--carry">.</span>
-        <div class="posed-cells" style="grid-template-columns:${cols}">${cellsHtml(carryDigits, { lane: 'carry' })}</div>
+  if (posedInputState.kind === 'mul') {
+    const activePhase = getMulPhaseForLane(posedInputState.activeLane);
+    const showRm1 = activePhase === 'pp1';
+    const showRm2 = activePhase === 'pp2';
+    const showRs = activePhase === 'sum';
+    state.elements.question.innerHTML = `
+      <div class="posed-board">
+        ${showRm1 ? `
+        <div class="posed-row posed-row--carry">
+          <span class="posed-sign posed-sign--carry">.</span>
+          <div class="posed-cells" style="grid-template-columns:${cols}">${cellsHtml(laneDigits('rm1'), { lane: 'rm1', readonlyCols: [0] })}</div>
+        </div>
+        ` : ''}
+        ${showRm2 ? `
+        <div class="posed-row posed-row--carry posed-row--carry-rm2">
+          <span class="posed-sign posed-sign--carry">.</span>
+          <div class="posed-cells" style="grid-template-columns:${cols}">${cellsHtml(laneDigits('rm2'), { lane: 'rm2', readonlyCols: [0] })}</div>
+        </div>
+        ` : ''}
+        <div class="posed-row">
+          <span class="posed-sign">&nbsp;</span>
+          <div class="posed-cells" style="grid-template-columns:${cols}">${cellsHtml(topDigits)}</div>
+        </div>
+        <div class="posed-row">
+          <span class="posed-sign">${question.operator || '×'}</span>
+          <div class="posed-cells" style="grid-template-columns:${cols}">${cellsHtml(bottomDigits)}</div>
+        </div>
+        <div class="posed-separator"></div>
+        ${showRs ? `
+        <div class="posed-row posed-row--carry">
+          <span class="posed-sign posed-sign--carry">.</span>
+          <div class="posed-cells" style="grid-template-columns:${cols}">${cellsHtml(laneDigits('rs'), { lane: 'rs', readonlyCols: [0] })}</div>
+        </div>
+        ` : ''}
+        <div class="posed-row">
+          <span class="posed-sign">&nbsp;</span>
+          <div class="posed-cells" style="grid-template-columns:${cols}">${cellsHtml(laneDigits('pp1'), { lane: 'pp1' })}</div>
+        </div>
+        <div class="posed-row">
+          <span class="posed-sign">+</span>
+          <div class="posed-cells" style="grid-template-columns:${cols}">${cellsHtml(laneDigits('pp2'), { lane: 'pp2' })}</div>
+        </div>
+        <div class="posed-separator"></div>
+        <div class="posed-row posed-row--result">
+          <span class="posed-sign">=</span>
+          <div class="posed-cells" style="grid-template-columns:${cols}">${cellsHtml(laneDigits('final'), { lane: 'final' })}</div>
+        </div>
       </div>
-      <div class="posed-row">
-        <span class="posed-sign">&nbsp;</span>
-        <div class="posed-cells" style="grid-template-columns:${cols}">${cellsHtml(topDigits)}</div>
+    `;
+  } else {
+    state.elements.question.innerHTML = `
+      <div class="posed-board">
+        <div class="posed-row posed-row--carry">
+          <span class="posed-sign posed-sign--carry">.</span>
+          <div class="posed-cells" style="grid-template-columns:${cols}">${cellsHtml(laneDigits('carry'), { lane: 'carry', readonlyCols: [0] })}</div>
+        </div>
+        <div class="posed-row">
+          <span class="posed-sign">&nbsp;</span>
+          <div class="posed-cells" style="grid-template-columns:${cols}">${cellsHtml(topDigits)}</div>
+        </div>
+        <div class="posed-row">
+          <span class="posed-sign">${question.operator || '+'}</span>
+          <div class="posed-cells" style="grid-template-columns:${cols}">${cellsHtml(bottomDigits)}</div>
+        </div>
+        <div class="posed-separator"></div>
+        <div class="posed-row posed-row--result">
+          <span class="posed-sign">=</span>
+          <div class="posed-cells" style="grid-template-columns:${cols}">${cellsHtml(laneDigits('result'), { lane: 'result' })}</div>
+        </div>
       </div>
-      <div class="posed-row">
-        <span class="posed-sign">${question.operator || '+'}</span>
-        <div class="posed-cells" style="grid-template-columns:${cols}">${cellsHtml(bottomDigits)}</div>
-      </div>
-      <div class="posed-separator"></div>
-      <div class="posed-row posed-row--result">
-        <span class="posed-sign">=</span>
-        <div class="posed-cells" style="grid-template-columns:${cols}">${cellsHtml(resultDigits, { lane: 'result' })}</div>
-      </div>
-    </div>
-  `;
+    `;
+  }
   syncPosedActionSelection();
 }
 
 function initPosedInputState(question) {
-  posedInputState = {
-    width: getPosedWidth(question),
-    activeLane: 'result',
-    activeCol: 0,
-    resultDigits: Array.from({ length: getPosedWidth(question) }, () => ''),
-    carryDigits: Array.from({ length: getPosedWidth(question) }, () => ''),
-  };
+  const width = getPosedWidth(question);
+  if (isPosedMulQuestion(question)) {
+    posedInputState = {
+      kind: 'mul',
+      width,
+      mulPhase: 'pp1',
+      activeLane: 'pp1',
+      activeCol: 0,
+      lanes: {
+        rm1: Array.from({ length: width }, () => ''),
+        rm2: Array.from({ length: width }, () => ''),
+        rs: Array.from({ length: width }, () => ''),
+        pp1: Array.from({ length: width }, () => ''),
+        pp2: Array.from({ length: width }, () => ''),
+        final: Array.from({ length: width }, () => ''),
+      },
+    };
+  } else {
+    posedInputState = {
+      kind: 'addsub',
+      width,
+      activeLane: 'result',
+      activeCol: 0,
+      lanes: {
+        result: Array.from({ length: width }, () => ''),
+        carry: Array.from({ length: width }, () => ''),
+      },
+    };
+  }
   state.elements.answerDisplay.hidden = true;
   if (state.elements.posedActions) state.elements.posedActions.hidden = false;
   syncPosedBuffer();
@@ -146,12 +285,30 @@ function initPosedInputState(question) {
 
 function commitPosedDigit(digit) {
   if (!posedInputState || !/^\d$/.test(digit)) return;
-  if (posedInputState.activeLane === 'carry') {
-    posedInputState.carryDigits[posedInputState.activeCol] = digit;
+  const lane = posedInputState.activeLane;
+  const col = resolveColumnForLane(lane, posedInputState.activeCol);
+  if (col === null) return;
+  posedInputState.lanes[lane][col] = digit;
+
+  if (posedInputState.kind === 'mul') {
+    setMulPhase(getMulPhaseForLane(lane));
+    if (lane === 'rm1') {
+      posedInputState.activeLane = 'pp1';
+      posedInputState.activeCol = resolveColumnForLane('pp1', col) ?? col;
+    } else if (lane === 'rm2') {
+      posedInputState.activeLane = 'pp2';
+      posedInputState.activeCol = resolveColumnForLane('pp2', col) ?? col;
+    } else if (lane === 'rs') {
+      posedInputState.activeLane = 'final';
+      posedInputState.activeCol = resolveColumnForLane('final', col) ?? col;
+    } else {
+      posedInputState.activeCol = Math.min(posedInputState.width - 1, col + 1);
+    }
+  } else if (lane === 'carry') {
     posedInputState.activeLane = 'result';
+    posedInputState.activeCol = resolveColumnForLane('result', col) ?? col;
   } else {
-    posedInputState.resultDigits[posedInputState.activeCol] = digit;
-    posedInputState.activeCol = Math.min(posedInputState.width - 1, posedInputState.activeCol + 1);
+    posedInputState.activeCol = Math.min(posedInputState.width - 1, col + 1);
   }
   syncPosedBuffer();
   renderPosedBoard(state.currentQ);
@@ -159,19 +316,26 @@ function commitPosedDigit(digit) {
 
 function clearPosedDigit() {
   if (!posedInputState) return;
-  if (posedInputState.activeLane === 'carry') {
-    posedInputState.carryDigits[posedInputState.activeCol] = '';
-  } else {
-    posedInputState.resultDigits[posedInputState.activeCol] = '';
-  }
+  const lane = posedInputState.activeLane;
+  const col = resolveColumnForLane(lane, posedInputState.activeCol);
+  if (col === null) return;
+  posedInputState.lanes[lane][col] = '';
   syncPosedBuffer();
   renderPosedBoard(state.currentQ);
 }
 
 function clearPosedBoard() {
   if (!posedInputState) return;
-  posedInputState.resultDigits = posedInputState.resultDigits.map(() => '');
-  posedInputState.carryDigits = posedInputState.carryDigits.map(() => '');
+  Object.keys(posedInputState.lanes).forEach((lane) => {
+    posedInputState.lanes[lane] = posedInputState.lanes[lane].map(() => '');
+  });
+  if (posedInputState.kind === 'mul') {
+    posedInputState.mulPhase = 'pp1';
+    posedInputState.activeLane = 'pp1';
+  } else {
+    posedInputState.activeLane = 'result';
+  }
+  posedInputState.activeCol = 0;
   syncPosedBuffer();
   renderPosedBoard(state.currentQ);
 }
@@ -179,7 +343,9 @@ function clearPosedBoard() {
 function movePosedColumn(delta) {
   if (!posedInputState) return;
   const next = posedInputState.activeCol + delta;
-  posedInputState.activeCol = Math.max(0, Math.min(posedInputState.width - 1, next));
+  const clamped = Math.max(0, Math.min(posedInputState.width - 1, next));
+  const safeCol = resolveColumnForLane(posedInputState.activeLane, clamped);
+  posedInputState.activeCol = safeCol === null ? posedInputState.activeCol : safeCol;
   renderPosedBoard(state.currentQ);
 }
 
@@ -194,11 +360,23 @@ export function handlePosedNumpadInput({ digit = null, action = null } = {}) {
     return true;
   }
   if (action === 'posed-mode-result') {
-    setPosedActiveCell('result', posedInputState?.activeCol ?? 0);
+    const currentPhase = posedInputState?.kind === 'mul'
+      ? getMulPhaseForLane(posedInputState.activeLane)
+      : null;
+    const lane = posedInputState?.kind === 'mul'
+      ? getMulResultLaneForPhase(currentPhase)
+      : 'result';
+    setPosedActiveCell(lane, posedInputState?.activeCol ?? 0);
     return true;
   }
   if (action === 'posed-mode-carry') {
-    setPosedActiveCell('carry', posedInputState?.activeCol ?? 0);
+    const currentPhase = posedInputState?.kind === 'mul'
+      ? getMulPhaseForLane(posedInputState.activeLane)
+      : null;
+    const lane = posedInputState?.kind === 'mul'
+      ? getMulCarryLaneForPhase(currentPhase)
+      : 'carry';
+    setPosedActiveCell(lane, posedInputState?.activeCol ?? 0);
     return true;
   }
   if (action === 'posed-clear-cell') {
@@ -231,11 +409,17 @@ export function handlePosedKeyboardInput(key) {
     return true;
   }
   if (key === 'ArrowUp') {
-    setPosedActiveCell('carry', posedInputState?.activeCol ?? 0);
+    const lane = posedInputState?.kind === 'mul'
+      ? getMulCarryLaneForPhase(getMulPhaseForLane(posedInputState.activeLane))
+      : 'carry';
+    setPosedActiveCell(lane, posedInputState?.activeCol ?? 0);
     return true;
   }
   if (key === 'ArrowDown') {
-    setPosedActiveCell('result', posedInputState?.activeCol ?? 0);
+    const lane = posedInputState?.kind === 'mul'
+      ? getMulResultLaneForPhase(getMulPhaseForLane(posedInputState.activeLane))
+      : 'result';
+    setPosedActiveCell(lane, posedInputState?.activeCol ?? 0);
     return true;
   }
   return false;
@@ -262,7 +446,7 @@ export function ensureModeCompatibleWithSchoolLevel() {
   const allowedOps = getAllowedOperations(state.currentSchoolLevel);
   const currentIntent = modeIntent(state.currentMode);
   const currentOp = modeOp(state.currentMode);
-  if (state.gameType === 'posed' && ![OP.MIX, OP.ADD, OP.SUB].includes(currentOp)) {
+  if (state.gameType === 'posed' && ![OP.MIX, OP.ADD, OP.SUB, OP.MUL].includes(currentOp)) {
     state.currentMode = `${currentIntent}_${OP.ADD}`;
     return;
   }

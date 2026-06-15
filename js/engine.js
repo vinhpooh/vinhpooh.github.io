@@ -70,15 +70,19 @@ function generateSubQuestion(config) {
 }
 
 const POSED_PROFILES = {
-  primary_cp:  { add: { min: 10, max: 99 },    sub: { min: 10, max: 99, nonNegative: true } },
-  primary_ce1: { add: { min: 20, max: 199 },   sub: { min: 20, max: 199, nonNegative: true } },
-  primary_ce2: { add: { min: 100, max: 999 },  sub: { min: 100, max: 999, nonNegative: true } },
-  primary_cm1: { add: { min: 100, max: 1999 }, sub: { min: 100, max: 1999, nonNegative: true } },
-  primary_cm2: { add: { min: 100, max: 2999 }, sub: { min: 100, max: 2999, nonNegative: true } },
+  primary_cp:  { add: { min: 10, max: 99 },    sub: { min: 10, max: 99, nonNegative: true }, mul: { topMin: 10, topMax: 99, bottomMin: 10, bottomMax: 19 } },
+  primary_ce1: { add: { min: 20, max: 199 },   sub: { min: 20, max: 199, nonNegative: true }, mul: { topMin: 20, topMax: 199, bottomMin: 10, bottomMax: 29 } },
+  primary_ce2: { add: { min: 100, max: 999 },  sub: { min: 100, max: 999, nonNegative: true }, mul: { topMin: 100, topMax: 999, bottomMin: 12, bottomMax: 49 } },
+  primary_cm1: { add: { min: 100, max: 1999 }, sub: { min: 100, max: 1999, nonNegative: true }, mul: { topMin: 100, topMax: 1999, bottomMin: 12, bottomMax: 69 } },
+  primary_cm2: { add: { min: 100, max: 2999 }, sub: { min: 100, max: 2999, nonNegative: true }, mul: { topMin: 100, topMax: 2999, bottomMin: 12, bottomMax: 99 } },
 };
 
 function getPosedProfile(level) {
-  return POSED_PROFILES[level] || { add: { min: 100, max: 1999 }, sub: { min: 100, max: 1999, nonNegative: true } };
+  return POSED_PROFILES[level] || {
+    add: { min: 100, max: 1999 },
+    sub: { min: 100, max: 1999, nonNegative: true },
+    mul: { topMin: 100, topMax: 1999, bottomMin: 12, bottomMax: 69 },
+  };
 }
 
 function generatePosedAddQuestion(config) {
@@ -111,6 +115,24 @@ function generatePosedSubQuestion(config) {
     operator: '−',
     text: `${x} − ${y} = ?`,
     answer: x - y,
+  };
+}
+
+function generatePosedMulQuestion(config) {
+  const topMin = Number.isFinite(config?.topMin) ? config.topMin : 10;
+  const topMax = Number.isFinite(config?.topMax) ? config.topMax : 999;
+  const bottomMin = Math.max(10, Number.isFinite(config?.bottomMin) ? config.bottomMin : 12);
+  const bottomMax = Math.max(bottomMin, Number.isFinite(config?.bottomMax) ? config.bottomMax : 99);
+  const top = randInt(topMin, topMax);
+  const bottom = randInt(bottomMin, bottomMax);
+  return {
+    op: OP.MUL,
+    render: 'posed',
+    top,
+    bottom,
+    operator: '×',
+    text: `${top} × ${bottom} = ?`,
+    answer: top * bottom,
   };
 }
 
@@ -161,15 +183,16 @@ function generateDivQuestion(config) {
 export function generateQuestion() {
   if (state.gameType === 'posed') {
     const allowedOps = getAllowedOperations(state.currentSchoolLevel);
-    const posedAllowed = [OP.ADD, OP.SUB].filter((op) => allowedOps.includes(op));
+    const posedAllowed = [OP.ADD, OP.SUB, OP.MUL].filter((op) => allowedOps.includes(op));
     const safeAllowed = posedAllowed.length > 0 ? posedAllowed : [OP.ADD];
     const posedProfile = getPosedProfile(state.currentSchoolLevel);
     const requestedOp = isMixOp(state.currentMode)
-      ? weightedPickByOpMap(safeAllowed, { [OP.ADD]: 60, [OP.SUB]: 40 })
+      ? weightedPickByOpMap(safeAllowed, { [OP.ADD]: 45, [OP.SUB]: 30, [OP.MUL]: 25 })
       : modeOp(state.currentMode);
     const op = safeAllowed.includes(requestedOp) ? requestedOp : safeAllowed[0];
 
     switch (op) {
+      case OP.MUL: return generatePosedMulQuestion(posedProfile.mul);
       case OP.SUB: return generatePosedSubQuestion(posedProfile.sub);
       case OP.ADD:
       default: return generatePosedAddQuestion(posedProfile.add);

@@ -223,15 +223,32 @@
   cursor: pointer;
 }
 
+.posed-row--carry-rm2 .posed-cell {
+  background: #ecfdf5;
+  color: #22c55e;
+}
+
 .posed-row--result .posed-cell {
   background: #f8faff;
   border-width: 2px;
   cursor: pointer;
 }
 
+.posed-cell.active {
+  border-color: var(--clr-primary);
+  box-shadow: 0 0 0 2px rgba(92, 103, 242, 0.2);
+  background: #fff;
+}
+
 .posed-row--carry .posed-cell.active {
   border-color: #f59e0b;
   box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.22);
+  background: #fff;
+}
+
+.posed-row--carry-rm2 .posed-cell.active {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.22);
   background: #fff;
 }
 
@@ -243,6 +260,14 @@
 
 .posed-row--result .posed-cell.empty {
   color: #94a3b8;
+}
+
+.posed-cell--readonly {
+  cursor: default;
+  pointer-events: none;
+  color: transparent;
+  background: transparent;
+  border-color: transparent;
 }
 
 .posed-separator {
