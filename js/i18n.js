@@ -414,6 +414,14 @@ export function getSchoolLevelLabel(level) {
   return SCHOOL_LEVEL_LABELS[currentLanguage][level] || level;
 }
 
+export function getSchoolLevelDisplayParts(level) {
+  const label = getSchoolLevelLabel(level);
+  if (typeof label !== 'string') return { icon: '', text: String(level || '') };
+  const match = label.match(/^(\S+)\s+(.+)$/u);
+  if (!match) return { icon: '', text: label };
+  return { icon: match[1], text: match[2] };
+}
+
 export function getCheers() {
   return CHEERS[currentLanguage];
 }

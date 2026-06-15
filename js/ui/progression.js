@@ -2,7 +2,7 @@ import { INTENT, OP, PROGRESS_BADGES, SCHOOL_LEVEL, tiersForTerrain } from '../c
 import { modeIntent, modeOp } from '../engine.js';
 import { state } from '../state.js';
 import { loadProfileSessionHistory } from '../storage.js';
-import { getSchoolLevelLabel, t } from '../i18n.js';
+import { getSchoolLevelDisplayParts, getSchoolLevelLabel, t } from '../i18n.js';
 
 const ALL_TYPES = [
   { id: 'mental', labelKey: 'progression.type.mental' },
@@ -114,6 +114,14 @@ function renderPillClass(baseClass, active, hasData) {
   return `prog-pill ${baseClass}${active ? ' active' : ''}${hasData ? '' : ' prog-pill--no-data'}`;
 }
 
+function renderProgressionLevelButtonLabel(level) {
+  const { icon, text } = getSchoolLevelDisplayParts(level);
+  const iconHtml = icon
+    ? `<span class="prog-pill-level-icon" aria-hidden="true">${icon}</span>`
+    : '<span class="prog-pill-level-icon prog-pill-level-icon--empty" aria-hidden="true"></span>';
+  return `${iconHtml}<span class="prog-pill-level-text">${text}</span>`;
+}
+
 export function renderProgressionTerrains(history = getProgressionHistory()) {
   const { selection, availability } = syncProgressionSelection(history);
 
@@ -156,7 +164,8 @@ export function renderProgressionTerrains(history = getProgressionHistory()) {
     buttons: PROGRESSION_LEVELS.map((level) => {
       const hasData = availability.level[level];
       const cls = renderPillClass('prog-pill--level', selection.level === level, hasData);
-      return `<button class="${cls}" data-prog-level="${level}" type="button">${getSchoolLevelLabel(level)}</button>`;
+      const levelLabel = getSchoolLevelLabel(level);
+      return `<button class="${cls}" data-prog-level="${level}" type="button" aria-label="${levelLabel}">${renderProgressionLevelButtonLabel(level)}</button>`;
     }),
   });
 

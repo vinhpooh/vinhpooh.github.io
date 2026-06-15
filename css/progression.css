@@ -17,7 +17,7 @@
 }
 
 .prog-selector-row--level {
-  align-items: flex-start;
+  align-items: center;
 }
 
 .prog-selector-label {
@@ -137,14 +137,35 @@
 .prog-pill--level {
   min-height: 34px;
   padding: 4px 8px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
   font-size: 0.76rem;
   font-weight: 700;
   line-height: 1;
-  white-space: nowrap;
   color: var(--clr-text);
 }
 
 .prog-pill--level.active { color: #fff; }
+
+.prog-pill-level-icon {
+  line-height: 1;
+  font-size: 0.82rem;
+}
+
+.prog-pill-level-icon--empty {
+  min-height: 0.82rem;
+}
+
+.prog-pill-level-text {
+  display: block;
+  line-height: 1;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  text-align: center;
+}
 
 /* État vide */
 .progression-empty {

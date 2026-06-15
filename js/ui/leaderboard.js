@@ -1,13 +1,21 @@
 ﻿import { ENABLED_SCHOOL_LEVELS, OP, getAllowedOperations } from '../config.js';
 import { state } from '../state.js';
 import { loadLeaderboard, loadSurvieLeaderboard } from '../storage.js';
-import { getSchoolLevelLabel, t } from '../i18n.js';
+import { getSchoolLevelDisplayParts, getSchoolLevelLabel, t } from '../i18n.js';
+
+function renderSchoolLevelButtonLabel(level) {
+  const { icon, text } = getSchoolLevelDisplayParts(level);
+  const iconHtml = icon
+    ? `<span class="school-level-btn-icon" aria-hidden="true">${icon}</span>`
+    : '<span class="school-level-btn-icon school-level-btn-icon--empty" aria-hidden="true"></span>';
+  return `${iconHtml}<span class="school-level-btn-text">${text}</span>`;
+}
 
 export function renderSchoolLevelOptions() {
   if (!state.elements.schoolLevelRow) return;
   const controlsLocked = Boolean(state.elements.modeMenuCloseBtn?.disabled);
   state.elements.schoolLevelRow.innerHTML = ENABLED_SCHOOL_LEVELS
-    .map(level => `<button class="school-level-btn${level === state.currentSchoolLevel ? ' active' : ''}" data-level="${level}" type="button" aria-label="${t('schoolLevel.label')} : ${getSchoolLevelLabel(level)}"${controlsLocked ? ' disabled' : ''}>${getSchoolLevelLabel(level)}</button>`)
+    .map(level => `<button class="school-level-btn${level === state.currentSchoolLevel ? ' active' : ''}" data-level="${level}" type="button" aria-label="${t('schoolLevel.label')} : ${getSchoolLevelLabel(level)}"${controlsLocked ? ' disabled' : ''}>${renderSchoolLevelButtonLabel(level)}</button>`)
     .join('');
 }
 
@@ -53,7 +61,7 @@ export function renderClassementLevelSelector() {
   state.elements.classementLevelSelector.innerHTML = ENABLED_SCHOOL_LEVELS.map(level => `
     <button class="classement-level-btn${level === state.classementLevel ? ' active' : ''}"
       data-level="${level}" type="button">
-      ${getSchoolLevelLabel(level)}
+      ${renderSchoolLevelButtonLabel(level)}
     </button>
   `).join('');
 }
