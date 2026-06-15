@@ -1,0 +1,139 @@
+﻿/* ============================================================
+   BASE — reset, variables, body
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+[hidden] { display: none !important; }
+
+:root {
+  --clr-primary:  #5c67f2;
+  --clr-success:  #22c55e;
+  --clr-warning:  #f59e0b;
+  --clr-danger:   #ef4444;
+  --clr-defi:   #f59e0b;
+  --clr-survie:   #f97316;
+  --clr-libre:    #22c55e;
+  --clr-bg:       #f8faff;
+  --clr-surface:  #ffffff;
+  --clr-text:     #1e293b;
+  --clr-muted:    #64748b;
+  --radius:       18px;
+  --shadow:       0 8px 32px rgba(92, 103, 242, 0.18);
+  --t:            0.2s ease;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+/* ============================================================
+   DARK THEME — surcharge des tokens + surfaces codées en dur
+   ============================================================ */
+html[data-theme="dark"] {
+  --clr-primary:  #818cf8;
+  --clr-defi:   #fbbf24;
+  --clr-survie:   #fb923c;
+  --clr-libre:    #4ade80;
+  --clr-bg:       #1e293b;
+  --clr-surface:  #0f172a;
+  --clr-text:     #e2e8f0;
+  --clr-muted:    #94a3b8;
+  --shadow:       0 8px 32px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme="dark"] body {
+  background: linear-gradient(135deg, #0f172a 0%, #312e81 100%);
+}
+
+html[data-theme="dark"] kbd { background: #334155; color: var(--clr-text); }
+
+/* Timer + onglets + icônes */
+html[data-theme="dark"] .timer-track-bar { background: #334155; }
+html[data-theme="dark"] .tab-bar { border-bottom-color: #334155; }
+html[data-theme="dark"] .btn-icon-action:hover { background: #334155; }
+html[data-theme="dark"] .language-menu { border-color: #334155; }
+html[data-theme="dark"] .language-option:hover,
+html[data-theme="dark"] .language-option.active { background: #334155; }
+
+/* Pavé numérique */
+html[data-theme="dark"] .numpad-btn:hover  { background: #334155; }
+html[data-theme="dark"] .numpad-btn:active { background: #475569; }
+html[data-theme="dark"] .numpad-btn--del   { background: #7f1d1d; color: #fecaca; }
+html[data-theme="dark"] .numpad-btn--del:hover { background: #991b1b; }
+
+/* Mode menu */
+html[data-theme="dark"] .mode-menu { border-color: #334155; }
+html[data-theme="dark"] .mode-menu-section { border-bottom-color: #334155; }
+html[data-theme="dark"] .mode-menu-section--focus { background: #1e293b; }
+html[data-theme="dark"] .mode-summary-tag-btn { border-color: #334155; background: #0f172a; }
+html[data-theme="dark"] .mode-summary-tag-btn:hover { border-color: var(--clr-primary); background: #1e293b; }
+html[data-theme="dark"] .mode-type-item { border-color: #334155; background: #0f172a; }
+html[data-theme="dark"] .mode-type-item:hover { border-color: var(--clr-primary); background: #1e293b; }
+html[data-theme="dark"] .mode-op-item { border-color: #334155; background: #0f172a; }
+html[data-theme="dark"] .mode-op-item:hover { border-color: var(--clr-primary); background: #1e293b; }
+html[data-theme="dark"] .mode-intent-item { border-color: #334155; background: #0f172a; }
+html[data-theme="dark"] .mode-intent-item--defi:hover { background: #422006; }
+html[data-theme="dark"] .mode-intent-item--survie:hover { background: #431407; }
+html[data-theme="dark"] .mode-intent-item--libre:hover { background: #052e16; }
+html[data-theme="dark"] .mode-menu-actions { border-top-color: #334155; }
+
+/* Classements */
+html[data-theme="dark"] .leaderboard-table td { border-top-color: #334155; }
+html[data-theme="dark"] .leaderboard-rank-1 td { background: #422006; color: #fbbf24; }
+html[data-theme="dark"] #leaderboard-section,
+html[data-theme="dark"] #leaderboard-panel { border-top-color: #334155; }
+html[data-theme="dark"] .op-leaderboards { border-top-color: #334155; }
+html[data-theme="dark"] .op-section { background: #1f2937; border-color: #334155; }
+html[data-theme="dark"] .op-board { border-top-color: #334155; }
+
+/* Progression */
+html[data-theme="dark"] .prog-pill { border-color: #334155; background: #0f172a; }
+html[data-theme="dark"] .prog-pill:hover { border-color: var(--clr-primary); }
+html[data-theme="dark"] .prog-pill.active { border-color: var(--clr-primary); background: var(--clr-primary); }
+html[data-theme="dark"] .prog-pill--no-data {
+  border-color: #334155;
+  background: #0f172a;
+  color: #64748b;
+  border-style: dashed;
+  opacity: 0.65;
+}
+html[data-theme="dark"] .progression-kpi { background: #1f2937; border-color: #334155; }
+html[data-theme="dark"] .prog-bar { background: #334155; }
+html[data-theme="dark"] .prog-empty-banner { background: #422006; border-color: #7c2d12; }
+html[data-theme="dark"] .prog-objective-card { background: #1e293b; border-color: #334155; }
+
+/* Feedback + écran de fin */
+html[data-theme="dark"] .feedback-box.correct { background: #052e16; }
+html[data-theme="dark"] .feedback-box.wrong   { background: #450a0a; }
+html[data-theme="dark"] .end-screen {
+  background: linear-gradient(135deg, #1e293b 0%, #422006 100%);
+  border-color: #334155;
+}
+
+/* Modales + profils */
+html[data-theme="dark"] .profile-card,
+html[data-theme="dark"] .profile-edit-btn { background: #1e293b; border-color: #334155; }
+html[data-theme="dark"] .profile-edit-btn:hover { background: #283548; }
+html[data-theme="dark"] #profile-name-input,
+html[data-theme="dark"] #profile-edit-name-input {
+  background: #1e293b;
+  border-color: #334155;
+  color: var(--clr-text);
+}
+html[data-theme="dark"] .btn-profile-secondary { background: #334155; color: var(--clr-text); }
+html[data-theme="dark"] .profile-delete-confirm { background: #450a0a; border-color: #7f1d1d; }
+html[data-theme="dark"] .settings-option { border-color: #334155; }
+html[data-theme="dark"] .settings-section { border-color: #334155; }
+html[data-theme="dark"] .settings-group-danger { border-top-color: #334155; }
+html[data-theme="dark"] .settings-code-input {
+  background: #1e293b;
+  border-color: #334155;
+  color: var(--clr-text);
+}
+html[data-theme="dark"] .settings-reset-message--success { color: #4ade80; }
+

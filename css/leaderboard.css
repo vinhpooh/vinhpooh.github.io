@@ -1,0 +1,137 @@
+/* ============================================================
+   LEADERBOARD — tables classement compétition + challenge
+   ============================================================ */
+
+/* ── Sélecteur de niveau ── */
+.classement-level-selector {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 6px;
+  padding: 10px 0 4px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.classement-level-btn {
+  width: 100%;
+  min-height: 34px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1.5px solid #e2e8f0;
+  background: var(--clr-surface);
+  color: var(--clr-text);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+html[data-theme="dark"] .classement-level-btn {
+  border-color: #334155;
+}
+
+.classement-level-btn.active {
+  background: var(--clr-primary);
+  border-color: var(--clr-primary);
+  color: #fff;
+}
+
+.classement-level-btn:not(.active):hover {
+  border-color: var(--clr-primary);
+  color: var(--clr-primary);
+}
+
+.leaderboard-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--clr-text);
+  margin-bottom: 10px;
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.leaderboard-table th {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--clr-muted);
+  padding: 4px 8px 8px;
+  text-align: center;
+}
+
+.leaderboard-table td {
+  padding: 7px 8px;
+  text-align: center;
+  border-top: 1px solid #f1f5f9;
+  font-weight: 600;
+  color: var(--clr-text);
+}
+
+.leaderboard-rank-1 td {
+  background: #fffbeb;
+  color: #d97706;
+  font-weight: 800;
+}
+
+.leaderboard-rank-1 td:first-child::before {
+  content: '🥇 ';
+}
+
+#leaderboard-section {
+  margin-top: 18px;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 14px;
+}
+
+#leaderboard-panel {
+  margin-top: 8px;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 14px;
+}
+
+.leaderboard-panel-title {
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--clr-text);
+  margin-bottom: 10px;
+}
+
+.end-player-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--clr-muted);
+  margin: 8px 0 12px;
+}
+
+/* ── Classement Série Mix ── */
+#survie-leaderboard-panel {
+  margin-top: 16px;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 14px;
+}
+
+.leaderboard-empty-hint {
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--clr-muted);
+  padding: 18px 12px;
+  margin: 0;
+}
+
+.leaderboard-empty-row td {
+  text-align: center;
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--clr-muted);
+  padding: 6px 0;
+}

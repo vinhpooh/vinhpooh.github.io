@@ -1,0 +1,384 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🧮 Jeu de Maths</title>
+  <script>
+    (function () {
+      try {
+        if (localStorage.getItem('theme') === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/game.css">
+  <link rel="stylesheet" href="css/screens.css">
+  <link rel="stylesheet" href="css/leaderboard.css">
+  <link rel="stylesheet" href="css/mode-menu.css">
+  <link rel="stylesheet" href="css/progression.css">
+</head>
+<body>
+  <div class="game-container">
+
+    <div class="confetti-layer" id="confetti-layer" aria-hidden="true" hidden></div>
+
+    <header class="game-header">
+      <div class="game-title-row">
+        <h1>🧮 Jeu de Maths</h1>
+        <div class="header-actions">
+          <div class="language-switch" id="language-switch">
+            <button id="language-btn" class="btn-icon-action settings-btn-icon" aria-label="Langue" title="Langue" type="button">🇫🇷</button>
+            <div class="language-menu" id="language-menu" hidden>
+              <button class="language-option" type="button" data-language-choice="fr">🇫🇷 Français</button>
+              <button class="language-option" type="button" data-language-choice="en">🇬🇧 English</button>
+            </div>
+          </div>
+        <button id="settings-btn" class="btn-icon-action settings-btn-icon" aria-label="Paramètres" title="Paramètres">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        </div>
+      </div>
+      <div class="player-header-row" id="player-header-row">
+        <p id="player-display-name" class="player-display-name">👤 Anonyme</p>
+        <button id="change-player-btn" class="btn-icon-action" aria-label="Changer de joueur" title="Changer de joueur">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Barre d'onglets -->
+    <div class="tab-bar" id="tab-bar">
+      <button class="tab-btn active" data-tab="jouer" id="tab-jouer"><span class="tab-emoji">🎮</span><span class="tab-label">Jouer</span></button>
+      <button class="tab-btn" data-tab="progression" id="tab-progression"><span class="tab-emoji">📈</span><span class="tab-label">Progression</span></button>
+      <button class="tab-btn" data-tab="classement" id="tab-classement"><span class="tab-emoji">🏆</span><span class="tab-label">Classement</span></button>
+    </div>
+
+    <!-- Panel Jouer -->
+    <div class="tab-panel" id="panel-jouer">
+
+      <!-- Ligne : configuration pré-partie -->
+      <div class="mode-trigger-row" id="mode-trigger-row">
+
+        <div class="mode-trigger" id="mode-trigger">
+          <div class="mode-summary-tags" id="mode-summary-tags" aria-label="Configuration active">
+            <button class="mode-summary-tag-btn" id="mode-summary-type" data-focus-section="type" type="button">🧠 Mental</button>
+            <button class="mode-summary-tag-btn" id="mode-summary-op" data-focus-section="op" type="button">Mix</button>
+            <button class="mode-summary-tag-btn" id="mode-summary-intent" data-focus-section="intent" type="button">🎯 Défi</button>
+            <button class="mode-summary-tag-btn" id="mode-summary-level" data-focus-section="level" type="button">CP</button>
+          </div>
+          <div class="mode-menu" id="mode-menu" hidden>
+
+            <!-- Section type -->
+            <div class="mode-menu-section" id="mode-menu-section-type">
+              <span class="mode-menu-section-label" id="mode-section-type-label">Type de jeu</span>
+              <div class="mode-type-grid">
+                <button class="mode-type-item" data-type="mental"><span class="mode-type-emoji">🧠</span><span class="mode-type-name">Mental</span></button>
+                <button class="mode-type-item" data-type="posed"><span class="mode-type-emoji">📝</span><span class="mode-type-name">Posé</span></button>
+              </div>
+            </div>
+
+            <!-- Section opération -->
+            <div class="mode-menu-section" id="mode-menu-section-op">
+              <span class="mode-menu-section-label" id="mode-section-op-label">Opération</span>
+              <div class="mode-op-row" id="mode-op-row">
+                <button class="mode-op-item mode-op-item--mix" data-op="mix" aria-label="Mix">
+                  <span class="mode-op-mix-icon" aria-hidden="true"><span>➕</span><span>➖</span><span>✖️</span><span>➗</span></span>
+                </button>
+                <button class="mode-op-item" data-op="add" aria-label="Addition"><span class="mode-op-emoji">➕</span></button>
+                <button class="mode-op-item" data-op="sub" aria-label="Soustraction"><span class="mode-op-emoji">➖</span></button>
+                  <button class="mode-op-item" data-op="mul" aria-label="Multiplication"><span class="mode-op-emoji">✖️</span></button>
+                  <button class="mode-op-item" data-op="div" aria-label="Division"><span class="mode-op-emoji">➗</span></button>
+                </div>
+              </div>
+
+              <!-- Section intention -->
+              <div class="mode-menu-section" id="mode-menu-section-intent">
+                <span class="mode-menu-section-label" id="mode-section-intent-label">Mode</span>
+                <div class="mode-intent-row" id="mode-intent-row">
+                  <button class="mode-intent-item mode-intent-item--defi" data-intent="defi"><span class="mode-intent-name">🎯 Défi</span></button>
+                  <button class="mode-intent-item mode-intent-item--survie" data-intent="survie"><span class="mode-intent-name">⚡ Survie</span></button>
+                  <button class="mode-intent-item mode-intent-item--libre" data-intent="libre"><span class="mode-intent-name">🟢 Libre</span></button>
+                </div>
+              </div>
+
+              <!-- Section niveau -->
+              <div class="mode-menu-section" id="mode-menu-section-level">
+                <span class="mode-menu-section-label" id="mode-section-level-label">Niveau scolaire</span>
+                <div id="school-level-row" class="school-level-row" role="group" aria-label="Niveau scolaire"></div>
+              </div>
+
+              <div class="mode-menu-actions">
+                <button class="btn mode-menu-close-btn" id="mode-menu-close-btn" type="button">✅ Terminé</button>
+              </div>
+
+            </div>
+          </div>
+          <!-- Backdrop drawer (mobile) -->
+          <div class="mode-drawer-backdrop" id="mode-drawer-backdrop" hidden></div>
+
+        </div><!-- /mode-trigger-row -->
+
+      <!-- Timer + compteur de questions -->
+      <div class="timer-row" id="timer-track" hidden aria-hidden="true">
+        <span class="active-school-level" id="active-school-level" aria-live="polite"></span>
+        <div class="timer-track-bar">
+          <div class="timer-fill" id="timer-bar"></div>
+        </div>
+        <span class="q-counter" id="q-counter" aria-live="polite" hidden></span>
+        <div class="scores-row" id="scores-row">
+          <div class="score-card" id="score-card">
+            <span class="score-label">Score</span>
+            <span class="score-value" id="current-score">0</span>
+          </div>
+          <div class="streak-card" id="streak-card" hidden>
+            <span class="score-label">🔥 Série</span>
+            <span class="score-value" id="current-streak">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Game play area: question column + numpad -->
+      <div class="game-play-area" id="game-play-area" hidden>
+
+        <!-- Question column: question + answer display + feedback -->
+        <main class="question-zone game-play-main">
+          <div class="buddy" id="buddy" aria-hidden="true">
+            <span class="buddy-icon" id="buddy-icon">🦊</span>
+            <span class="buddy-name" id="buddy-name"></span>
+          </div>
+          <div class="question-text" id="question" aria-live="polite">…</div>
+          <div class="answer-display placeholder" id="answer-display">Ta réponse…</div>
+          <input id="answer-input" type="text" inputmode="none" autocomplete="off"
+                 aria-label="Entrer ta réponse"
+                 style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;overflow:hidden" />
+          <div class="feedback-box" id="feedback" aria-live="assertive" role="status"></div>
+        </main>
+
+        <!-- Numpad -->
+        <div class="numpad" id="numpad" aria-label="Pavé numérique">
+          <button class="numpad-btn" data-digit="7">7</button>
+          <button class="numpad-btn" data-digit="8">8</button>
+          <button class="numpad-btn" data-digit="9">9</button>
+          <button class="numpad-btn" data-digit="4">4</button>
+          <button class="numpad-btn" data-digit="5">5</button>
+          <button class="numpad-btn" data-digit="6">6</button>
+          <button class="numpad-btn" data-digit="1">1</button>
+          <button class="numpad-btn" data-digit="2">2</button>
+          <button class="numpad-btn" data-digit="3">3</button>
+          <button class="numpad-btn numpad-btn--del" data-action="del">⌫</button>
+          <button class="numpad-btn" data-digit="0">0</button>
+          <button class="numpad-btn numpad-btn--ok" data-action="ok">✓</button>
+        </div>
+
+        <div class="posed-actions" id="posed-actions" hidden>
+          <button class="posed-action-btn" data-action="posed-mode-result" type="button">🎯 Résultat</button>
+          <button class="posed-action-btn" data-action="posed-mode-carry" type="button">⬆️ Retenue</button>
+          <button class="posed-action-btn" data-action="posed-clear-cell" type="button">⌫ Effacer case</button>
+          <button class="posed-action-btn" data-action="posed-clear-all" type="button">🧽 Vider ardoise</button>
+        </div>
+
+      </div>
+
+      <!-- Action buttons -->
+      <div class="btn-row">
+        <button id="start-btn" class="btn btn-start" hidden aria-label="Démarrer la partie">▶️ Démarrer</button>
+        <button id="stop-btn" class="btn btn-stop" hidden aria-label="Arrêter la partie">🛑 Arrêter</button>
+      </div>
+
+      <!-- End-game screen -->
+      <div class="end-screen" id="end-screen" hidden aria-live="assertive">
+        <div class="end-icon">🎉</div>
+        <h2 class="end-title">Partie terminée !</h2>
+        <div class="end-score-block">
+          <span class="end-label" id="end-label">Score final</span>
+          <span class="end-score" id="end-score-value">0</span>
+        </div>
+        <div id="end-player-name-section" hidden>
+          <p class="end-player-name"><span id="end-player-name-value"></span></p>
+        </div>
+
+        <button class="btn btn-play-again" id="play-again-btn">🔁 Rejouer</button>
+
+        <div id="leaderboard-section" hidden>
+          <h3 class="leaderboard-title" id="leaderboard-section-title">🏆 Classement Compétition</h3>
+          <table class="leaderboard-table">
+            <thead>
+              <tr><th>#</th><th>Prénom</th><th>Score</th></tr>
+            </thead>
+            <tbody id="leaderboard-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /panel-jouer -->
+
+    <!-- Panel Classement -->
+    <div class="tab-panel" id="panel-classement" hidden>
+
+      <!-- Sélecteur de niveau -->
+      <div id="classement-level-selector" class="classement-level-selector"></div>
+
+      <!-- Classement Défi Mix -->
+      <div id="leaderboard-panel" hidden>
+        <h3 class="leaderboard-panel-title">🏆 Défi Mix</h3>
+        <table class="leaderboard-table">
+          <thead>
+            <tr><th>#</th><th>Prénom</th><th>Score</th></tr>
+          </thead>
+          <tbody id="leaderboard-panel-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Classement Survie Mix -->
+      <div id="survie-leaderboard-panel" hidden>
+        <h3 class="leaderboard-panel-title">⚡ Survie Mix</h3>
+        <table class="leaderboard-table">
+          <thead>
+            <tr><th>#</th><th>Prénom</th><th>Série</th></tr>
+          </thead>
+          <tbody id="survie-leaderboard-panel-body"></tbody>
+        </table>
+      </div>
+
+      <p class="leaderboard-empty-hint" id="leaderboard-empty-hint" hidden>
+        Aucun score pour le moment. Joue un Défi Mix ou une Survie Mix ! 🎮
+      </p>
+
+    </div><!-- /panel-classement -->
+
+    <!-- Panel Progression -->
+    <div class="tab-panel" id="panel-progression" hidden>
+      <div class="progression-terrains" id="progression-terrains"></div>
+      <div id="progression-body"></div>
+    </div><!-- /panel-progression -->
+
+  </div>
+  <!-- Modale gestion profils -->
+  <div id="profile-modal-overlay" class="modal-overlay" hidden>
+    <div class="modal-box profile-modal-box" role="dialog" aria-modal="true" aria-labelledby="profile-picker-title">
+      <div id="profile-picker-view">
+        <p class="modal-title" id="profile-picker-title">👥 Qui joue ?</p>
+        <p class="modal-hint">Choisis un profil, crée-en un, ou joue en invité.</p>
+        <div class="profile-language-switch" id="profile-language-switch">
+          <span class="profile-language-label" id="profile-language-label">Langue</span>
+          <div class="profile-language-options" id="profile-language-options">
+            <button class="profile-language-option" type="button" data-profile-language-choice="fr">🇫🇷 Français</button>
+            <button class="profile-language-option" type="button" data-profile-language-choice="en">🇬🇧 English</button>
+          </div>
+        </div>
+        <div id="profile-list" class="profile-list"></div>
+        <div class="profile-actions">
+          <button id="profile-new-btn" class="btn btn-profile-secondary">➕ Nouveau profil</button>
+          <button id="profile-guest-btn" class="btn btn-profile-guest">👤 Jouer en invité</button>
+        </div>
+      </div>
+
+      <div id="profile-create-view" hidden>
+        <p class="modal-title">✨ Créer un profil</p>
+        <p class="modal-hint">Écris ton prénom et choisis ton animal</p>
+
+        <div class="profile-create-form">
+          <input id="profile-name-input" type="text" maxlength="20" placeholder="Prénom (1 à 20 caractères)" autocomplete="off" />
+
+          <div class="avatar-grid" id="avatar-grid"></div>
+        </div>
+
+        <p id="profile-create-error" class="modal-hint modal-error" hidden>Le prénom doit contenir au moins 1 caractère.</p>
+        <div class="profile-actions">
+          <button id="profile-create-confirm-btn" class="btn btn-save">▶️ Créer et jouer</button>
+          <button id="profile-create-cancel-btn" class="btn btn-profile-secondary">↩️ Retour</button>
+        </div>
+      </div>
+
+      <div id="profile-edit-view" hidden>
+        <p class="modal-title">✏️ Modifier le profil</p>
+        <p class="modal-hint">Change ton prénom ou choisis un autre animal</p>
+
+        <div class="profile-create-form">
+          <input id="profile-edit-name-input" type="text" maxlength="20" placeholder="Prénom (1 à 20 caractères)" autocomplete="off" />
+
+          <div class="avatar-grid" id="avatar-grid-edit"></div>
+        </div>
+
+        <p id="profile-edit-error" class="modal-hint modal-error" hidden>Le prénom doit contenir au moins 1 caractère.</p>
+        <div class="profile-actions">
+          <button id="profile-edit-confirm-btn" class="btn btn-save">💾 Enregistrer</button>
+          <button id="profile-edit-cancel-btn" class="btn btn-profile-secondary">↩️ Retour</button>
+        </div>
+
+        <button id="profile-delete-btn" class="btn btn-profile-danger">🗑️ Supprimer ce profil</button>
+
+        <div id="profile-delete-confirm" class="profile-delete-confirm" hidden>
+          <p class="modal-hint profile-delete-warning">⚠️ Supprimer définitivement ce profil et tous ses scores ?</p>
+          <div class="profile-actions">
+            <button id="profile-delete-confirm-btn" class="btn btn-profile-danger">🗑️ Oui, supprimer</button>
+            <button id="profile-delete-cancel-btn" class="btn btn-profile-secondary">Annuler</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modale Paramètres (réglages unifiés) -->
+  <div id="settings-modal-overlay" class="modal-overlay" hidden>
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <p class="modal-title" id="settings-title">⚙️ Paramètres</p>
+
+      <div class="settings-section">
+        <span class="settings-section-title">🌐 Général · cet appareil</span>
+        <div class="settings-group">
+          <span class="settings-label">Thème</span>
+          <div class="settings-options" id="theme-options">
+            <button class="settings-option" type="button" data-theme-choice="light">☀️ Clair</button>
+            <button class="settings-option" type="button" data-theme-choice="dark">🌙 Sombre</button>
+          </div>
+        </div>
+        <div class="settings-group settings-group-danger">
+          <span class="settings-label">Classement global</span>
+          <p class="settings-danger-hint">Le nettoyage conserve seulement les scores liés à un profil existant.</p>
+          <div class="settings-danger-controls">
+            <input id="leaderboard-reset-code-input" class="settings-code-input" type="password" inputmode="numeric" autocomplete="off" placeholder="Code de validation" />
+            <button id="leaderboard-reset-btn" class="btn btn-profile-danger" type="button">🗑️ Nettoyer le classement</button>
+          </div>
+          <p id="leaderboard-reset-message" class="settings-reset-message" hidden></p>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <span class="settings-section-title" id="settings-personal-label">👤 Personnel</span>
+        <div class="settings-group">
+          <span class="settings-label">Disposition du pavé numérique</span>
+          <div class="settings-options" id="layout-options">
+            <button class="settings-option settings-option--layout" type="button" data-layout-choice="pc">
+              <span class="layout-icon layout-icon--pc" aria-hidden="true">
+                <span class="layout-icon-row"><span class="layout-icon-cell">7</span><span class="layout-icon-cell">8</span><span class="layout-icon-cell">9</span></span>
+                <span class="layout-icon-row"><span class="layout-icon-cell">4</span><span class="layout-icon-cell">5</span><span class="layout-icon-cell">6</span></span>
+                <span class="layout-icon-row"><span class="layout-icon-cell">1</span><span class="layout-icon-cell">2</span><span class="layout-icon-cell">3</span></span>
+                <span class="layout-icon-row"><span class="layout-icon-cell">⌫</span><span class="layout-icon-cell">0</span><span class="layout-icon-cell">✓</span></span>
+              </span>
+              <span class="settings-option-label">PC</span>
+            </button>
+            <button class="settings-option settings-option--layout" type="button" data-layout-choice="mobile">
+              <span class="layout-icon layout-icon--mobile" aria-hidden="true">
+                <span class="layout-icon-row"><span class="layout-icon-cell">1</span><span class="layout-icon-cell">2</span><span class="layout-icon-cell">3</span></span>
+                <span class="layout-icon-row"><span class="layout-icon-cell">4</span><span class="layout-icon-cell">5</span><span class="layout-icon-cell">6</span></span>
+                <span class="layout-icon-row"><span class="layout-icon-cell">7</span><span class="layout-icon-cell">8</span><span class="layout-icon-cell">9</span></span>
+                <span class="layout-icon-row"><span class="layout-icon-cell">⌫</span><span class="layout-icon-cell">0</span><span class="layout-icon-cell">✓</span></span>
+              </span>
+              <span class="settings-option-label">Mobile</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <button id="settings-close-btn" class="btn btn-profile-secondary">Fermer</button>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
